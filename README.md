@@ -1,0 +1,42 @@
+# St. John the Beloved Coptic Orthodox Church: the Plenix test site
+
+A church database and membership web app with made-up data, built only from [Plenix](https://github.com/plenix-ds/plenix-platform).
+Every automatic browser test of Plenix runs here (owner, 2026-10-25). It has nothing to do with the design spec.
+
+- **Address:** https://stjohn.lighthouseway.org (behind Authentik, like the design system).
+- **Made-up data only:** 120 families, 469 members, 10,000 gifts, the parish's ministries, servants, events and the liturgical calendar. Every person, family, address and gift is made up.
+- **Rules:** there are no sacrament records anywhere, and no table for them. People who serve are "servants".
+- **Plenix:** loaded like any outside app, from `https://design-system.lighthouseway.org/cdn/<version>/` (the version is `"plenix"` in package.json). `PLENIX_BASE` points it elsewhere; the Plenix tests point it at their own build.
+
+## Parts
+
+| Part | Where | What |
+|---|---|---|
+| Pages | `site/` | 35 screens (`site/screens/`), routes in `site/pages.js`, the frame in `site/site.jsx`. `node build.js` compiles them to `public/app.js`. |
+| Server | `server/server.js` | Node 22 with one library (`pg`). It serves the page, the pictures and the JSON API (`/api/bootstrap`, saves, `/api/reset`, `/healthz`). It resets to the seed every night at 3:00 (New York time). |
+| Database | `db/` | PostgreSQL 16. Numbered migrations in `db/migrations/` (`node db/migrate.js`); the seed (`node db/seed.js`) comes from the fixed generator in `db/generate.js`. |
+| Tests | `test/smoke.test.js` | Every page in Chrome, plus the API's saves and the reset (`npm test`). CI runs it against a throwaway PostgreSQL. |
+| Server setup | `Dockerfile`, `docker-compose.yml`, `deploy/` | The app and PostgreSQL in Docker on the Plenix server (VM 130). Deploy with `bash deploy/deploy.sh`. |
+
+## Running it on a computer
+
+```
+npm ci
+node build.js
+DATABASE_URL=pglite:memory node server/server.js     # PostgreSQL in the process (PGlite), a fresh database each start
+```
+
+Then open http://localhost:8790. With a PostgreSQL server, set `DATABASE_URL=postgres://user:pass@host:5432/stjohn`.
+
+## Settings (environment)
+
+| Setting | Default | What |
+|---|---|---|
+| `PORT` | 8790 | The port. |
+| `DATABASE_URL` | `pglite:memory` | `postgres://…` (the server, CI) or `pglite:memory`. |
+| `PLENIX_VERSION` | `plenix` in package.json | The Plenix release loaded from the CDN. |
+| `PLENIX_BASE` | the CDN of that version | Another address for the four Plenix files (the Plenix tests use their own build). |
+| `RESET_TOKEN` | none | Needed in the `x-reset-token` header for `POST /api/reset`. |
+| `RESET_OPEN` | off | `1` lets anyone reset (tests only). |
+| `RESET_HOUR` | 3 | The hour of the nightly reset; `-1` turns it off. |
+| `SEED_ON_START` | off | `1` resets to the seed on every start (the database is seeded anyway when it is empty). |

@@ -1,0 +1,34 @@
+# St. John the Beloved test site on the Plenix server (VM 130): the app and its PostgreSQL 16, both reachable only from
+# the server itself (the app on 127.0.0.1:8790 for the server's Nginx; the database only on the compose network).
+# The database password and the reset token come from /srv/st-john/.env (written once by deploy/deploy.sh, never in git).
+name: st-john
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stjohn
+      POSTGRES_USER: stjohn
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - /srv/st-john/db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stjohn -d stjohn"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  app:
+    build: .
+    image: st-john-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://stjohn:${DB_PASSWORD}@db:5432/stjohn
+      PLENIX_VERSION: ${PLENIX_VERSION:-}
+      RESET_TOKEN: ${RESET_TOKEN:?set RESET_TOKEN in .env}
+      RESET_HOUR: "3"
+      TZ: America/New_York
+    ports:
+      - "127.0.0.1:8790:8790"

@@ -1,0 +1,41 @@
+/* St. John the Beloved test site: every page of the site, in navigation order (site/pages.js). main.jsx draws the
+   screen each one names; the Plenix tests (tests/site.js in plenix-platform) read this list and open every route. path: the address in the hash
+   (#/members); a :id part opens with open. nav: false keeps it out of the navigation pane; chrome: false draws it without the
+   site header and navigation (sign-in, the public page). Keep it plain JSON after the = sign: Node reads it as JSON. */
+export const PAGES = [
+  {"id":"home","group":"Parish","path":"/","title":"Dashboard","screen":"dashboard","icon":"home"},
+  {"id":"members","group":"People","path":"/members","title":"Members","screen":"members","icon":"settings-users"},
+  {"id":"member","group":"People","path":"/member/:id","open":"/member/m1","title":"Member","screen":"member","nav":false},
+  {"id":"member-new","group":"People","path":"/members/new","title":"New member","screen":"member-new","nav":false},
+  {"id":"member-edit","group":"People","path":"/member/:id/edit","open":"/member/m1/edit","title":"Edit member","screen":"member-edit","nav":false},
+  {"id":"families","group":"People","path":"/families","title":"Families and households","screen":"families","icon":"home"},
+  {"id":"family","group":"People","path":"/family/:id","open":"/family/f1","title":"Household","screen":"family","nav":false},
+  {"id":"directory","group":"People","path":"/directory","title":"Directory","screen":"directory","icon":"person"},
+  {"id":"ministries","group":"Serving","path":"/ministries","title":"Ministries and services","screen":"ministries","icon":"briefcase"},
+  {"id":"ministry","group":"Serving","path":"/ministry/:id","open":"/ministry/sunday-school","title":"Ministry","screen":"ministry","nav":false},
+  {"id":"servants","group":"Serving","path":"/servants","title":"Servants and sign-ups","screen":"servants","icon":"checklist"},
+  {"id":"calendar","group":"Worship","path":"/calendar","title":"Calendar","screen":"calendar","icon":"calendar"},
+  {"id":"event","group":"Worship","path":"/event/:id","open":"/event/e10","title":"Event","screen":"event","nav":false},
+  {"id":"planning","group":"Worship","path":"/planning","title":"Feast planning","screen":"planning","icon":"schedule"},
+  {"id":"readings","group":"Worship","path":"/readings","title":"Readings and hymns","screen":"readings","icon":"document"},
+  {"id":"giving","group":"Giving","path":"/giving","title":"Donations and pledges","screen":"giving","icon":"chart"},
+  {"id":"gifts","group":"Giving","path":"/gifts","title":"Giving history","screen":"gifts","icon":"list-lines"},
+  {"id":"give","group":"Giving","path":"/give","title":"Give online","screen":"give","icon":"field-currency"},
+  {"id":"bookstore","group":"Giving","path":"/bookstore","title":"Bookstore","screen":"bookstore","icon":"bookmark"},
+  {"id":"announcements","group":"Communication","path":"/announcements","title":"Announcements","screen":"announcements","icon":"hdr-bell"},
+  {"id":"announcement-edit","group":"Communication","path":"/announcement/:id","open":"/announcement/a1","title":"Edit announcement","screen":"announcement-edit","nav":false},
+  {"id":"messages","group":"Communication","path":"/messages","title":"Messages","screen":"messages","icon":"message"},
+  {"id":"assistant","group":"Communication","path":"/assistant","title":"Parish assistant","screen":"assistant","icon":"sparkle"},
+  {"id":"documents","group":"Library","path":"/documents","title":"Documents","screen":"documents","icon":"folder"},
+  {"id":"document","group":"Library","path":"/document/:id","open":"/document/d1","title":"Document","screen":"document","nav":false},
+  {"id":"media","group":"Library","path":"/media","title":"Sermons and media","screen":"media","icon":"headphones"},
+  {"id":"photo","group":"Library","path":"/photo/:id","open":"/photo/v5","title":"Photo","screen":"photo","nav":false},
+  {"id":"reports","group":"Library","path":"/reports","title":"Reports","screen":"reports","icon":"chart"},
+  {"id":"search","group":"Library","path":"/search","open":"/search?q=girgis","title":"Search","screen":"search","nav":false},
+  {"id":"settings","group":"Administration","path":"/settings/:id","open":"/settings/general","title":"Settings","screen":"settings","icon":"gear","navOpen":"/settings/general"},
+  {"id":"account","group":"Administration","path":"/account","title":"My account","screen":"account","icon":"settings-profile"},
+  {"id":"welcome","group":"Administration","path":"/welcome","title":"Welcome","screen":"welcome","icon":"star"},
+  {"id":"sign-in","group":"Public","path":"/sign-in","title":"Sign in","screen":"sign-in","nav":false,"chrome":false},
+  {"id":"visit","group":"Public","path":"/visit","title":"Visit us","screen":"visit","nav":false,"chrome":false},
+  {"id":"not-found","group":"Public","path":"/missing","title":"Page not found","screen":"not-found","nav":false}
+];

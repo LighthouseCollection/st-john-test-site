@@ -1,0 +1,44 @@
+# St. John the Beloved test site: on every push and pull request, the build and the smoke test against a throwaway
+# PostgreSQL 16 (a GitHub service container, gone when the job ends): migrations, the seed, every page in Chrome with
+# Plenix from the CDN, and the API's saves and reset.
+name: Checks
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Build and smoke test (PostgreSQL 16)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: stjohn
+          POSTGRES_USER: stjohn
+          POSTGRES_PASSWORD: stjohn
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U stjohn -d stjohn" --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgres://stjohn:stjohn@localhost:5432/stjohn
+      CHROME_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Build
+        run: node build.js
+      - name: Migrations and seed
+        run: node db/seed.js
+      - name: Smoke test
+        run: node test/smoke.test.js
