@@ -36,7 +36,8 @@ ssh "$HOST" "set -e
   sudo cp /srv/st-john/.env /srv/st-john/src/.env
   cd /srv/st-john/src && sudo docker compose up -d --build --quiet-pull 2>&1 | tail -3
   # /version.json: Nginx serves this file (deploy/nginx-st-john.conf); name, versions, commit and time only
-  P=\$(sudo grep -s '^PLENIX_VERSION=' /srv/st-john/.env | cut -d= -f2); P=\${P:-$PLENIX}
+  # an empty or missing PLENIX_VERSION= falls back to package.json "plenix" on purpose; the value is cleaned (first line, version characters only)
+  P=\$(sudo grep -s '^PLENIX_VERSION=' /srv/st-john/.env | cut -d= -f2 | head -1 | tr -cd '0-9A-Za-z._+-'); P=\${P:-$PLENIX}
   printf '{\"name\": \"St. John test site\", \"version\": \"$SITE_VERSION\", \"plenix\": \"%s\", \"commit\": \"$COMMIT\", \"publishedAt\": \"$PUBLISHED\"}\n' \"\$P\" | sudo tee /srv/st-john/version.json >/dev/null
   sudo chmod 644 /srv/st-john/version.json
   sudo cp /srv/st-john/src/deploy/nginx-st-john.conf /etc/nginx/sites-available/st-john
