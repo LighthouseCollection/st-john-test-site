@@ -11,6 +11,12 @@ set -euo pipefail
 HOST=plenix@10.0.0.30
 cd "$(dirname "$0")/.."
 if [ "${SKIP_SMOKE:-}" != "1" ]; then DATABASE_URL=pglite:memory node test/smoke.test.js | tail -1 | grep -q SMOKE_OK || { echo "The smoke test failed: nothing deployed"; exit 1; }; fi
+# what /version.json says (owner, version-json-33): the site's version, the commit ("-dirty" when the tree has uncommitted
+# changes) and the time of the deploy; the Plenix version is package.json "plenix" unless the server's .env sets PLENIX_VERSION
+SITE_VERSION=$(node -p "require('./package.json').version")
+PLENIX=$(node -p "require('./package.json').plenix")
+COMMIT=$(git rev-parse --short HEAD)$(git diff --quiet HEAD -- || echo -dirty)
+PUBLISHED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 PKG=$(mktemp -u).tgz
 tar -czf "$PKG" --exclude=node_modules --exclude=public --exclude=.git Dockerfile docker-compose.yml package.json package-lock.json build.js site server db deploy
 SUM=$(sha256sum "$PKG" | cut -d' ' -f1)
@@ -29,6 +35,11 @@ ssh "$HOST" "set -e
   fi
   sudo cp /srv/st-john/.env /srv/st-john/src/.env
   cd /srv/st-john/src && sudo docker compose up -d --build --quiet-pull 2>&1 | tail -3
+  # /version.json: Nginx serves this file (deploy/nginx-st-john.conf); name, versions, commit and time only
+  # an empty or missing PLENIX_VERSION= falls back to package.json "plenix" on purpose; the value is cleaned (first line, version characters only)
+  P=\$(sudo grep -s '^PLENIX_VERSION=' /srv/st-john/.env | cut -d= -f2 | head -1 | tr -cd '0-9A-Za-z._+-'); P=\${P:-$PLENIX}
+  printf '{\"name\": \"St. John test site\", \"version\": \"$SITE_VERSION\", \"plenix\": \"%s\", \"commit\": \"$COMMIT\", \"publishedAt\": \"$PUBLISHED\"}\n' \"\$P\" | sudo tee /srv/st-john/version.json >/dev/null
+  sudo chmod 644 /srv/st-john/version.json
   sudo cp /srv/st-john/src/deploy/nginx-st-john.conf /etc/nginx/sites-available/st-john
   sudo ln -sf /etc/nginx/sites-available/st-john /etc/nginx/sites-enabled/st-john
   sudo nginx -t -q && sudo systemctl reload nginx
