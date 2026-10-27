@@ -1,12 +1,14 @@
 /* St. John the Beloved test site · Ministries and services (site/screens/ministries.jsx): every ministry of the
    parish as a card (Card with its icon beside the title, in a ContentGrid), the ways to get involved (FeatureCard), how the
-   ministries report to the clergy (Diagram, boxes and arrows), how many servants each ministry has (Treemap), and the
+   ministries report to the clergy (Diagram, boxes and arrows, and beside it the same as a TreeChart, left to right or top
+   to bottom; owner, 2026-10-26, charts-tree-26), how many servants each ministry has (Treemap), and the
    classes and groups of every ministry to browse (MillerColumns) or choose in a form (Cascader, TreeSelect).
-   Plenix parts: SitePage, PageContent, RecordPage.Header, Pictogram, ContentGrid, Card, FeatureCard, Diagram, Treemap,
+   Plenix parts: SitePage, PageContent, RecordPage.Header, Pictogram, ContentGrid, Card, FeatureCard, Diagram, TreeChart,
+     SegmentedControl, Treemap,
    MillerColumns, Cascader, TreeSelect, Panel, Field, Columns, Stack, Inline, Text, Count, Heading, Select. */
-import { Card, Cascader, Columns, ContentGrid, Count, Diagram, FeatureCard, Field, Heading, Inline, MillerColumns, PageContent, Panel,
+import { Card, Cascader, Columns, ContentGrid, Count, Diagram, FeatureCard, Field, Heading, Inline, MillerColumns, PageContent, Panel, SegmentedControl, TreeChart,
   Pictogram, RecordPage, Select, Stack, Text, Treemap, TreeSelect } from 'plenix-platform';
-import { CLERGY, MINISTRIES } from '../data.js';
+import { CHURCH, CLERGY, MINISTRIES } from '../data.js';
 import { SitePage } from '../site.jsx';
 const { useState, useMemo } = React;
 
@@ -55,6 +57,16 @@ export function MinistriesScreen({ chrome }) {
       .concat(MINISTRIES.map((m) => ({ id: m.id, label: m.name, detail: 'Led by ' + m.lead, group: m.group }))),
     edges: MINISTRIES.map((m) => ({ source: reportsTo(m), target: m.id })),
   }), []);
+  // the same as a tree: the parish, its priests, each priest's areas, their ministries (TreeChart, in the Plenix release that adds it; a
+  // Plenix release without it shows the Diagram alone)
+  const [treeWay, setTreeWay] = useState('left-to-right');
+  const tree = useMemo(() => ({ id: 'parish', label: CHURCH.name || 'St. John the Beloved', detail: 'The parish', children: CLERGY.slice(0, 2).map((c) => ({
+    id: c.id, label: c.name, detail: c.role,
+    children: AREAS.filter((a) => MINISTRIES.some((m) => m.group === a && reportsTo(m) === c.id)).map((a) => {
+      const ms = MINISTRIES.filter((m) => m.group === a && reportsTo(m) === c.id);
+      return { id: c.id + ':' + a, label: a, detail: ms.length + (ms.length === 1 ? ' ministry' : ' ministries'), children: ms.map((m) => ({ id: m.id, label: m.name, detail: 'Led by ' + m.lead })) };
+    }),
+  })) }), []);
   const treemap = AREAS.map((a) => ({ label: a, children: MINISTRIES.filter((m) => m.group === a).map((m) => ({ label: m.name, value: m.servants })) }));
   const chosen = findNode(myClass);
 
@@ -96,6 +108,14 @@ export function MinistriesScreen({ chrome }) {
             <Diagram variant="boxes" direction="right" title="How the ministries report to the clergy"
               description="Education and worship ministries report to the parish priest; fellowship, care and outreach to the associate priest."
               groups={diagram.groups} nodes={diagram.nodes} edges={diagram.edges} />
+            {TreeChart ? (
+              <Stack gap="sm">
+                <Field label="Draw the tree" layout="inline"><SegmentedControl label="Draw the tree" value={treeWay} onChange={setTreeWay}
+                  options={[{ value: 'left-to-right', label: 'Left to right' }, { value: 'top-to-bottom', label: 'Top to bottom' }]} /></Field>
+                <TreeChart title="The ministries by priest and area" orientation={treeWay} data={tree}
+                  description="Click a priest or an area to fold its branch away; the arrow keys move through the tree." />
+              </Stack>
+            ) : null}
             <Treemap title="Servants by ministry" valueTitle="Servants" data={treemap}
               description="The Food Pantry and the Agape Kitchen hold the most servants; every one of their members serves." />
           </Stack>
