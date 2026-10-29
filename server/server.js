@@ -12,6 +12,7 @@
      PORT (8790), DATABASE_URL (postgres://… or pglite:memory, see db/db.js),
      PLENIX_BASE: where Plenix is loaded from (default the CDN of PLENIX_VERSION:
        https://design-system.lighthouseway.org/cdn/<PLENIX_VERSION>/); the Plenix tests point it at their own build
+     PLENIX_ENGINES: 1 or 0 decides whether the page loads plenix-engines.js (default: probed at startup)
      PLENIX_VERSION (from package.json "plenix"), RESET_TOKEN, RESET_OPEN, RESET_HOUR (3: the nightly reset, in TZ)
    On start it applies the migrations and, when the database is empty (or SEED_ON_START=1), seeds it. */
 const http = require('http');
@@ -150,8 +151,24 @@ async function addRsvp(event, b) {
 }
 
 // ---- the page: index.html with the Plenix address filled in
+// {{ENGINES}} is plenix-engines.js (rich text, charts and PDF load through it) when this Plenix release has the file, else nothing:
+// releases before the engines script have no such file. PLENIX_ENGINES=1 or 0 decides outright (the Plenix tests set it, because
+// their PLENIX_BASE is a path this server's own harness serves); otherwise it is checked once at startup (probeEngines).
+let ENGINES = '';
+async function probeEngines() {
+  const url = BASE + 'plenix-engines.js', tag = '<script src="' + url + '"></script>';
+  if (process.env.PLENIX_ENGINES === '1') { ENGINES = tag; return; }
+  if (process.env.PLENIX_ENGINES === '0') { ENGINES = ''; return; }
+  try {
+    if (/^https?:/i.test(BASE)) {
+      // a redirect (a sign-in page) or an HTML answer is not the script: only a 200 that is not text/html counts
+      const r = await fetch(url, { method: 'HEAD', redirect: 'manual', signal: AbortSignal.timeout(5000) });
+      ENGINES = r.status === 200 && !/text\/html/i.test(r.headers.get('content-type') || '') ? tag : '';
+    } else ENGINES = fs.existsSync(path.join(BASE.replace(/^file:\/\//, ''), 'plenix-engines.js')) ? tag : '';
+  } catch (e) { ENGINES = ''; }
+}
 let INDEX = null;
-const page = () => (INDEX = INDEX || fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8').split('{{PLENIX}}').join(BASE).split('{{VERSION}}').join(VERSION));
+const page = () => (INDEX = INDEX || fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8').split('{{PLENIX}}').join(BASE).split('{{VERSION}}').join(VERSION).split('{{ENGINES}}').join(ENGINES));
 
 async function handle(req, res) {
   const url = new URL(req.url, 'http://localhost');
@@ -199,9 +216,10 @@ async function start() {
   const empty = !(await db.query('SELECT 1 FROM members LIMIT 1')).rows.length;
   if (empty || process.env.SEED_ON_START === '1') { const n = await seed(db); console.log('Seeded ' + n.members + ' members, ' + n.gifts + ' gifts'); }
   nightly();
+  await probeEngines();
   const server = http.createServer(handle);
   await new Promise((r) => server.listen(PORT, process.env.HOST || '0.0.0.0', r));
-  console.log('St. John the Beloved test site on port ' + PORT + ' · Plenix from ' + BASE + ' · ' + db.kind);
+  console.log('St. John the Beloved test site on port ' + PORT + ' · Plenix from ' + BASE + (ENGINES ? ' (with plenix-engines.js)' : '') + ' · ' + db.kind);
   return server;
 }
 

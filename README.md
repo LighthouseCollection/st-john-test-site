@@ -6,7 +6,7 @@ Every automatic browser test of Plenix runs here (owner, 2026-10-25). It has not
 - **Address:** https://stjohn.lighthouseway.org (behind Authentik, like the design system).
 - **Made-up data only:** 120 families, 469 members, 10,000 gifts, the parish's ministries, servants, events and the liturgical calendar. Every person, family, address and gift is made up.
 - **Rules:** there are no sacrament records anywhere, and no table for them. People who serve are "servants".
-- **Plenix:** loaded like any outside app, from `https://design-system.lighthouseway.org/cdn/<version>/` (the version is `"plenix"` in package.json). `PLENIX_BASE` points it elsewhere; the Plenix tests point it at their own build.
+- **Plenix:** loaded like any outside app, from `https://design-system.lighthouseway.org/cdn/<version>/` (the version is `"plenix"` in package.json). `PLENIX_BASE` points it elsewhere; the Plenix tests point it at their own build. The page loads `plenix-engines.js` (rich text, charts, PDF) after `plenix.js` when that file exists at the address (checked once at startup); releases before it have no such file and get no tag.
 
 ## Parts
 
@@ -35,7 +35,8 @@ Then open http://localhost:8790. With a PostgreSQL server, set `DATABASE_URL=pos
 | `PORT` | 8790 | The port. |
 | `DATABASE_URL` | `pglite:memory` | `postgres://…` (the server, CI) or `pglite:memory`. |
 | `PLENIX_VERSION` | `plenix` in package.json | The Plenix release loaded from the CDN. |
-| `PLENIX_BASE` | the CDN of that version | Another address for the four Plenix files (the Plenix tests use their own build). |
+| `PLENIX_BASE` | the CDN of that version | Another address for the Plenix files: `plenix.js`, `plenix.css`, `theme-boot.js`, `fonts.css` and, from the release that has it, `plenix-engines.js` (the Plenix tests use their own build). |
+| `PLENIX_ENGINES` | probed at startup | `1` loads `plenix-engines.js`, `0` does not, whatever the address holds. Without it the server asks for the file once (a 200 that is not an HTML page counts; a redirect does not). |
 | `RESET_TOKEN` | none | Needed in the `x-reset-token` header for `POST /api/reset`. |
 | `RESET_OPEN` | off | `1` lets anyone reset (tests only). |
 | `RESET_HOUR` | 3 | The hour of the nightly reset; `-1` turns it off. |
