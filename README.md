@@ -7,6 +7,9 @@ Every automatic browser test of Plenix runs here (owner, 2026-10-25). It has not
 - **Made-up data only:** 120 families, 469 members, 10,000 gifts, the parish's ministries, servants, events and the liturgical calendar. Every person, family, address and gift is made up.
 - **Rules:** there are no sacrament records anywhere, and no table for them. People who serve are "servants".
 - **Plenix:** loaded like any outside app, from `https://design-system.lighthouseway.org/cdn/<version>/` (the version is `"plenix"` in package.json). `PLENIX_BASE` points it elsewhere; the Plenix tests point it at their own build. The page loads `plenix-engines.js` (rich text, charts, PDF) after `plenix.js` when that file exists at the address (checked once at startup); releases before it have no such file and get no tag.
+- **Icons:** `site/assets/plenix-icons-st-john.js`, loaded after `plenix.js`, registers exactly the icons the site names, so each draws from its own module (Plenix #557).
+  - It is generated: never edit it. After a screen adds or changes an icon, write it again from a Plenix checkout with `node <plenix>/tools/icons/site-icons.js st-john site --out site/assets`. The generator stops on an unknown name.
+  - On a Plenix without `registerIcons` (0.73.0 and before) the file registers nothing and warns once in the console, and the icons draw as before.
 
 ## Parts
 
