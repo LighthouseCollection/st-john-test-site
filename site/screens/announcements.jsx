@@ -2,8 +2,9 @@
    parish announcements. A ContentManagementPage of the ANNOUNCEMENTS (one card each, opening its editor), filtered by
    status with a SegmentedControl; a page Banner for the Nativity Fast, a pinned Announcement card (Kiahk), a Notice about the draft
    waiting for review, the review itself (ReviewFlow), each announcement's publishing state (Publish) and the office's
-   NotificationList. Every name and message is made up. */
-import { Announcement, Banner, Button, Columns, ContentManagementPage, Heading, Link, Notice, NotificationList, Panel, Publish, ReviewFlow, SegmentedControl, Stack } from 'plenix-platform';
+   NotificationList, and the parish council's vote (VoteTally) with a line that keeps an email and a case number in their own direction (Isolate).
+   Every name and message is made up. */
+import { Announcement, Banner, Button, Columns, ContentManagementPage, Heading, Isolate, Link, Notice, NotificationList, Panel, Publish, ReviewFlow, SegmentedControl, Stack, Text, VoteTally } from 'plenix-platform';
 import { ANNOUNCEMENTS, CLERGY } from '../data.js';
 const { useState } = React;
 
@@ -22,6 +23,8 @@ export function AnnouncementsScreen({ screen, chrome }) {
   const [tab, setTab] = useState('all');
   const [fastBanner, setFastBanner] = useState(true);
   const [draftNotice, setDraftNotice] = useState(true);
+  // the parish council's vote on the Fellowship hall announcement (VoteTally): three members vote, one is away; the votes live in this page only
+  const [votes, setVotes] = useState({ c1: 'approve', c2: null, c3: null });
   const [notes, setNotes] = useState(NOTIFICATIONS);
   const [review, setReview] = useState({ status: 'in-review', history: [
     { id: 'h1', name: 'Fr. Antony Wahba', decision: 'changes-requested', comment: 'Please add the amount still needed for the roof.', time: 'Oct 25, 9:12 AM', dateTime: '2026-10-25T09:12' },
@@ -81,6 +84,17 @@ export function AnnouncementsScreen({ screen, chrome }) {
                 status={review.status} history={review.history}
                 reviewers={[{ id: 'c1', name: CLERGY[0].name, decision: review.status === 'approved' ? 'approved' : undefined }, { id: 'c2', name: CLERGY[1].name, decision: 'changes-requested' }]}
                 onDecision={(decision, comment) => setReview((r) => ({ status: decision, history: [{ id: 'h' + (r.history.length + 1), name: CLERGY[0].name, decision, comment, time: 'Just now', dateTime: now() }].concat(r.history) }))} />
+            </Panel>
+            <Panel title="Parish council vote" description="The council approves the Fellowship hall announcement before it is published.">
+              <Stack gap="sm">
+                <VoteTally label="Fellowship hall announcement: approve for publishing" members={[
+                  { memberId: 'c1', name: CLERGY[0].name, role: CLERGY[0].role, vote: votes.c1 },
+                  { memberId: 'c2', name: CLERGY[1].name, role: CLERGY[1].role, vote: votes.c2 },
+                  { memberId: 'c3', name: 'Mariam Boules', role: 'Council secretary', vote: votes.c3 },
+                  { memberId: 'c4', name: 'Fr. Daniel (visiting)', role: 'Guest priest', disabledReason: 'Absent' },
+                ]} onVote={(id, option) => setVotes((v) => ({ ...v, [id]: option }))} />
+                <Text>Send questions about the vote to <Isolate kind="email">council@stjohn.example.org</Isolate> and quote the case number <Isolate>FH-2026-10-18</Isolate>.</Text>
+              </Stack>
             </Panel>
           </Stack>
           <Panel title="Notifications">
