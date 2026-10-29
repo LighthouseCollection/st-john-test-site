@@ -2,12 +2,12 @@
    by default): its header (the ministry's kind as an IconTile, the documented media of a record header), the servants it
    still needs (ProgressBar, Count, ContextualHelp), the meeting details (Popover, Tooltip), the order of its classes
    (SortableList) and of this Sunday's lesson plan (useSortable with a DragHandle per row), this month's lessons
-   (CollapsibleSection with ShowMore) and how classes are grouped (Details).
+   (CollapsibleSection with ShowMore), the servants' vote on a motion (VoteTally) and how classes are grouped (Details).
    Plenix parts: SitePage, PageContent, RecordPage, IconTile, Panel, ProgressBar, Count, ContextualHelp, Popover, Tooltip,
    Button, SortableList, DragHandle, useSortable, CollapsibleSection, ShowMore, Details, List, Columns, Stack, Inline, Text,
-   EmptyState, Link. */
+   EmptyState, Link, VoteTally (Plenix 0.74.0 and later). */
 import { Button, CollapsibleSection, Columns, ContextualHelp, Count, Details, DragHandle, EmptyState, IconTile, Inline, Link, List,
-  PageContent, Panel, Popover, ProgressBar, RecordPage, ShowMore, SortableList, Stack, Text, Tooltip, useSortable, useToast } from 'plenix-platform';
+  PageContent, Panel, Popover, ProgressBar, RecordPage, ShowMore, SortableList, Stack, Text, Tooltip, VoteTally, useSortable, useToast } from 'plenix-platform';
 import { MINISTRIES, SERVING_SLOTS } from '../data.js';
 import { SitePage } from '../site.jsx';
 const { useState } = React;
@@ -31,6 +31,15 @@ const LESSONS = [
   { id: 'l5', date: 'Nov 29', title: 'The prophets who waited' },
   { id: 'l6', date: 'Dec 6', title: 'Hymns of Kiahk: the Theotokia' },
 ];
+// the servants' vote on one motion (made up): one member is recused, one is absent
+const VOTERS = [
+  { memberId: 'v1', name: 'Marina Girgis', role: 'Ministry lead', vote: 'approve' },
+  { memberId: 'v2', name: 'Peter Nasr', role: 'Servant', vote: null },
+  { memberId: 'v3', name: 'Mariam Saad', role: 'Servant', vote: 'approve' },
+  { memberId: 'v4', name: 'Kyrillos Fahmy', role: 'Servant', vote: 'deny' },
+  { memberId: 'v5', name: 'Abanoub Tawfik', role: 'Servant', disabledReason: 'Recused' },
+  { memberId: 'v6', name: 'Verena Ibrahim', role: 'Servant', disabledReason: 'Absent' },
+];
 const PLAN = [
   { id: 'p1', name: 'Opening prayer from the Agpeya' },
   { id: 'p2', name: 'Hymn practice' },
@@ -44,6 +53,7 @@ export function MinistryScreen({ screen, chrome }) {
   const toast = useToast();
   const [classes, setClasses] = useState(() => CLASS_LIST[m ? m.id : ''] || (m ? [{ id: 'all', name: m.name, detail: m.meets, servants: m.servants, needed: m.servants }] : []));
   const [plan, setPlan] = useState(PLAN);
+  const [voters, setVoters] = useState(VOTERS);
   const [allLessons, setAllLessons] = useState(false);
   const sortable = useSortable({ items: plan, onReorder: (next) => setPlan(next), getName: (x) => x.name, label: 'This Sunday’s plan' });
 
@@ -105,6 +115,11 @@ export function MinistryScreen({ screen, chrome }) {
                 </Stack>
               </Panel>
             </Columns>
+
+            <Panel title="Servants’ vote" description="Motion 3: hold the Kiahk retreat on December 12.">
+              <VoteTally label="Motion 3: hold the Kiahk retreat on December 12" members={voters}
+                onVote={(memberId, option) => setVoters((all) => all.map((v) => (v.memberId === memberId ? { ...v, vote: option } : v)))} />
+            </Panel>
 
             <CollapsibleSection title="Lessons this month" icon="text-card">
               <Stack gap="xs">
