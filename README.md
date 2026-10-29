@@ -35,7 +35,8 @@ Then open http://localhost:8790. With a PostgreSQL server, set `DATABASE_URL=pos
 | `PORT` | 8790 | The port. |
 | `DATABASE_URL` | `pglite:memory` | `postgres://…` (the server, CI) or `pglite:memory`. |
 | `PLENIX_VERSION` | `plenix` in package.json | The Plenix release loaded from the CDN. |
-| `PLENIX_BASE` | the CDN of that version | Another address for the four Plenix files (the Plenix tests use their own build). |
+| `PLENIX_BASE` | the CDN of that version | Another address for the Plenix files: `plenix.js`, `plenix.css`, `theme-boot.js`, `fonts.css` and, from the release that has it, `plenix-engines.js` (the Plenix tests use their own build). |
+| `PLENIX_ENGINES` | probed at startup | `1` loads `plenix-engines.js`, `0` does not, whatever the address holds. Without it the server asks for the file once (a 200 that is not an HTML page counts; a redirect does not). |
 | `RESET_TOKEN` | none | Needed in the `x-reset-token` header for `POST /api/reset`. |
 | `RESET_OPEN` | off | `1` lets anyone reset (tests only). |
 | `RESET_HOUR` | 3 | The hour of the nightly reset; `-1` turns it off. |
