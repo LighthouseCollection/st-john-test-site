@@ -150,8 +150,18 @@ async function addRsvp(event, b) {
 }
 
 // ---- the page: index.html with the Plenix address filled in
+// {{ENGINES}} is plenix-engines.js (rich text, charts and PDF load through it) when this Plenix release has the file, else nothing:
+// releases before the engines script have no such file. Checked once at startup (probeEngines).
+let ENGINES = '';
+async function probeEngines() {
+  const url = BASE + 'plenix-engines.js';
+  try {
+    if (/^https?:/i.test(BASE)) ENGINES = (await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(5000) })).ok ? '<script src="' + url + '"></script>' : '';
+    else ENGINES = fs.existsSync(path.join(BASE.replace(/^file:\/\//, ''), 'plenix-engines.js')) ? '<script src="' + url + '"></script>' : '';
+  } catch (e) { ENGINES = ''; }
+}
 let INDEX = null;
-const page = () => (INDEX = INDEX || fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8').split('{{PLENIX}}').join(BASE).split('{{VERSION}}').join(VERSION));
+const page = () => (INDEX = INDEX || fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8').split('{{PLENIX}}').join(BASE).split('{{VERSION}}').join(VERSION).split('{{ENGINES}}').join(ENGINES));
 
 async function handle(req, res) {
   const url = new URL(req.url, 'http://localhost');
@@ -199,9 +209,10 @@ async function start() {
   const empty = !(await db.query('SELECT 1 FROM members LIMIT 1')).rows.length;
   if (empty || process.env.SEED_ON_START === '1') { const n = await seed(db); console.log('Seeded ' + n.members + ' members, ' + n.gifts + ' gifts'); }
   nightly();
+  await probeEngines();
   const server = http.createServer(handle);
   await new Promise((r) => server.listen(PORT, process.env.HOST || '0.0.0.0', r));
-  console.log('St. John the Beloved test site on port ' + PORT + ' · Plenix from ' + BASE + ' · ' + db.kind);
+  console.log('St. John the Beloved test site on port ' + PORT + ' · Plenix from ' + BASE + (ENGINES ? ' (with plenix-engines.js)' : '') + ' · ' + db.kind);
   return server;
 }
 
