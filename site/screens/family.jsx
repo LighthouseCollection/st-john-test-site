@@ -1,9 +1,9 @@
 /* St. John the Beloved test site · Household (site/screens/family.jsx): one family of the parish. A DetailPage (its
-   "On this page" pane links the sections): Breadcrumbs and the household's people as Persona rows with a RoleLabel each;
+   "On this page" pane links the sections): Breadcrumbs, an Arabic note with the household's file number as an Isolate, and the household's people as Persona rows with a RoleLabel each;
    the Household section is a Tree of the home (parents, children; choosing a person shows them), Family ties a
    NetworkGraph of the household and the related families in the parish, and Members a static Table. Edit address opens
    a FormFlow in a drawer (edit mode, guarded while it has changes). */
-import { Badge, Breadcrumbs, Button, DetailPage, EmptyState, Field, FormFlow, Inline, Input, NetworkGraph, PageContent, Persona, RoleLabel, Stack, Table, Text, Tree } from 'plenix-platform';
+import { Badge, Breadcrumbs, Button, DetailPage, EmptyState, Field, FormFlow, Inline, Input, Isolate, NetworkGraph, PageContent, Persona, RoleLabel, Stack, Table, Text, Tree } from 'plenix-platform';
 import { FAMILIES, MEMBER_STATUS, familyById, membersOf } from '../data.js';
 import { SitePage } from '../site.jsx';
 import { STATUS_LOOK } from './members.jsx';
@@ -26,6 +26,7 @@ export function FamilyScreen({ screen, chrome }) {
   const children = people.filter((p) => p.role === 'Child');
   const related = FAMILIES.filter((f) => f.last === fam.last && f.id !== fam.id).slice(0, 3);
   const head = parents[0];
+  const fileNumber = '2026' + String(fam.id.replace(/\D/g, '')).padStart(4, '0') + '-01';   // the household's file number, made up (20260001-01)
   const picked = people.find((p) => p.id === chosen);
 
   const nodes = [{ id: 'home', label: 'Household', icon: 'home', children: [
@@ -64,6 +65,9 @@ export function FamilyScreen({ screen, chrome }) {
       onBack={() => screen.navigate('/families', { f: fam.id })} strings={{ sections: 'On this page' }} sections={sections}>
       <Stack gap="md">
         <Breadcrumbs items={[{ label: 'Families and households', href: '#/families?f=' + fam.id }, { label: fam.name }]} />
+        {/* the parish office writes some notes in Arabic: the household's file number sits inside the sentence as an island. kind="id" makes it read as the
+            page reads (01-20260001 in right-to-left text) from the first Plenix release after 0.75.0; 0.75.0 keeps it as written. Isolate needs 0.74.0 or later */}
+        <Text lang="ar" id="household-file-ar">{'رقم ملف الأسرة '}<Isolate kind="id">{fileNumber}</Isolate>{' في سجل الرعية.'}</Text>
         <Inline gap="lg" wrap>
           {people.map((p) => <Inline key={p.id} gap="sm"><Persona name={p.name} secondary={p.phone} size="sm" href={'#/member/' + p.id} />{roleLabel(p.role)}</Inline>)}
         </Inline>

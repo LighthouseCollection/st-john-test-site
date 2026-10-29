@@ -40,6 +40,28 @@ const chrome = () => process.env.CHROME_PATH || ['C:/Program Files/Google/Chrome
       check('page ' + p.id, !errs.length, errs.slice(0, 3).join(' | '));
     }
 
+    // Plenix parts the screens added for the Plenix coverage test (#338): the servants' vote (VoteTally) and the Arabic file number (Isolate).
+    // Each is first looked for where it is not drawn, so the check can see an absence; then where it is.
+    const open = async (hash) => { await page.goto('about:blank'); await page.goto(BASE + hash, { waitUntil: 'networkidle0', timeout: 60000 }); await page.waitForSelector('main', { timeout: 15000 }); };
+    const groups = () => page.$$eval('[role="group"][aria-label^="Vote of "]', (a) => a.map((e) => e.getAttribute('aria-label')));
+    const pressed = () => page.$$eval('[role="group"][aria-label^="Vote of "] button[aria-pressed="true"]', (a) => a.length);
+    await open('#/ministries');
+    check('the ministries list draws no vote', (await groups()).length === 0, 'found one');
+    await open('#/ministry/sunday-school');
+    const names = await groups();
+    check('the servants\' vote shows a choice group for each member who can vote (6 members, 2 turned off)', names.length === 4 && names.indexOf('Vote of Abanoub Tawfik') < 0, JSON.stringify(names));
+    const start = await pressed();
+    await page.click('[role="group"][aria-label="Vote of Peter Nasr"] button');   // the first choice is Approve
+    const voted = await pressed();
+    await page.click('[role="group"][aria-label="Vote of Peter Nasr"] button');   // the same choice again clears it
+    const cleared = await pressed();
+    check('a vote is counted, then cleared', start === 3 && voted === 4 && cleared === 3, start + ' then ' + voted + ' then ' + cleared);
+    await open('#/members');
+    check('the members list draws no Arabic file note', (await page.$$('#household-file-ar')).length === 0, 'found one');
+    await open('#/family/f1');
+    const note = await page.$eval('#household-file-ar', (e) => ({ text: e.textContent, island: [...e.querySelectorAll('.plx-isolate')].map((i) => i.textContent), lang: e.getAttribute('lang') }));
+    check('the Arabic note holds the household\'s file number as one Isolate', note.lang === 'ar' && /[\u0600-\u06FF]/.test(note.text) && note.island.length === 1 && note.island[0] === '20260001-01', JSON.stringify(note));
+
     // the API: saves survive a reload; a reset brings the seed back
     const before = (await api('bootstrap')).json.members.length;
     const made = await api('members', 'POST', { first: 'Test', last: 'Visitor', status: 'visitor', district: 'East', address: { line1: '1 Test Lane', city: 'Maple Hollow', region: 'NJ', postal: '07999', country: 'US' } });
