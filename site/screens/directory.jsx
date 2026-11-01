@@ -60,7 +60,7 @@ export function DirectoryScreen({ screen, chrome }) {
         <DataToolbar label="Directory view"
           start={<TagList label="Show"><Chip selected={servantsOnly} onClick={() => { setServantsOnly(!servantsOnly); setPage(1); }}>Servants only</Chip>
             <Chip selected={phones} onClick={() => setPhones(!phones)}>Phone numbers</Chip></TagList>}
-          end={<Text variant="secondary">{families.length} households · {people.length} people</Text>} />
+          end={<Text variant="secondary" truncate>{families.length} households · {people.length} people</Text>} />
 
         <Panel title="Households" description="Choose households to print mailing labels; open one for a quick look.">
           <Stack gap="md">
